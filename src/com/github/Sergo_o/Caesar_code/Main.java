@@ -1,9 +1,10 @@
 package com.github.Sergo_o.Caesar_code;
 
-import java.io.IOException;
+import java.io.*;
+import java.nio.ByteBuffer;
+import java.nio.channels.FileChannel;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.Scanner;
 
 public class Main {
@@ -15,7 +16,7 @@ public class Main {
             "путь к файлу, где находится исходной текст;\n" +
             "путь к файлу, где нужно сохранить результат работы программы;\n" +
             "число - шаг сдвига букв (положительное число).";
-    static char[] CYRILLIC_ALPHABET = "абвгдеёжзийклмнопрстуфхцчшщъыьэюя".toCharArray();
+    static String CYRILLIC_ALPHABET = "абвгдеёжзийклмнопрстуфхцчшщъыьэюя";
     static Scanner scan = new Scanner(System.in);
 
     public static void main(String[] args) {
@@ -24,12 +25,13 @@ public class Main {
         int operation = scan.nextInt();
         while (operation != 1 && operation != 2) {
             System.out.println("Неверное число! Выберите число от 1 до 2.");
+            operation = scan.nextInt();
         }
 
         System.out.println(DATA_REQUEST);
-        Path inputPath = pathCheck();
+        String inputPath = pathCheck();
         try{
-            while (Files.size(inputPath) == 0){
+            while (Files.size(Path.of(inputPath)) == 0){
                 System.out.println(inputPath + " - Файл пустой! Введи путь к файлу с данными.");
                 inputPath = pathCheck();
             }
@@ -37,11 +39,11 @@ public class Main {
             System.err.println("Ошибка работы с файлом." + ioException.getMessage());
         }
 
-        Path outputPath = pathCheck();
+        String outputPath = pathCheck();
 
         int stepCoder = scan.nextInt();
-        while(stepCoder<0){
-            System.out.println("Введите положительное число.");
+        while(stepCoder<=0){
+            System.out.println("Введите число больше 0.");
             stepCoder = scan.nextInt();
         }
 
@@ -50,23 +52,104 @@ public class Main {
         } else transcript(inputPath, outputPath, stepCoder);
 
     }
+    public static char characterOffsetForward (char inputChar, int shift){
+        int indexCharInAlphabet;
+        boolean charIsUpperCase = Character.isUpperCase(inputChar);
 
-    public static void encryption(Path inputPath, Path outputPath, int stepCoder) {
+        if(charIsUpperCase){
+            indexCharInAlphabet = CYRILLIC_ALPHABET.indexOf(Character.toLowerCase(inputChar));
+        }
+        else indexCharInAlphabet = CYRILLIC_ALPHABET.indexOf(inputChar);
+
+        if(indexCharInAlphabet == -1){
+            System.out.printf("Символ - %s, не входит в русский алфавит!\n", inputChar );
+            return inputChar;
+        }
+
+        shift += indexCharInAlphabet;
+        while (shift>CYRILLIC_ALPHABET.length()){
+            shift -= CYRILLIC_ALPHABET.length() -1;
+        }
+
+        if(shift<CYRILLIC_ALPHABET.length() && shift>=0){
+            if(charIsUpperCase){
+                return Character.toUpperCase(CYRILLIC_ALPHABET.charAt(shift));
+            }
+            else return CYRILLIC_ALPHABET.charAt(shift);
+        }
+        return '?';
+    }
+
+    public static char characterOffsetBack (char inputChar, int shift){
+        int indexCharInAlphabet;
+        boolean charIsUpperCase = Character.isUpperCase(inputChar);
+
+        if(charIsUpperCase){
+            indexCharInAlphabet = CYRILLIC_ALPHABET.indexOf(Character.toLowerCase(inputChar));
+        }
+        else indexCharInAlphabet = CYRILLIC_ALPHABET.indexOf(inputChar);
+
+        if(indexCharInAlphabet == -1){
+            System.out.printf("Символ - %s, не входит в русский алфавит!", inputChar);
+        }
+
+        shift = indexCharInAlphabet - shift;
+        while (shift<0){
+            shift += CYRILLIC_ALPHABET.length();
+        }
+
+        if(shift<CYRILLIC_ALPHABET.length()){
+            if(charIsUpperCase){
+                return Character.toUpperCase(CYRILLIC_ALPHABET.charAt(shift));
+            }
+            else return CYRILLIC_ALPHABET.charAt(shift);
+        }
+        return '?';
+    }
+
+    public static void encryption(String inputPath, String outputPath, int stepCoder) {
+        try(RandomAccessFile inputFile = new RandomAccessFile(inputPath,"r");
+        RandomAccessFile outputFile = new RandomAccessFile(outputPath,"rw");
+        FileChannel channelInputFile = inputFile.getChannel();
+        FileChannel channelOutputFile = outputFile.getChannel()){
+
+            ByteBuffer byteBufferInput = ByteBuffer.allocate(100);
+            ByteBuffer byteBufferOutput = ByteBuffer.allocate(100);
+
+            while (channelInputFile.read(byteBufferInput) != -1){
+                byteBufferInput.flip();
+                while(byteBufferInput.hasRemaining()) {
+                    char charFromBuffer =  byteBufferInput.getChar();
+                    if (Character.isLetter(charFromBuffer)) {
+                        char charOffset = characterOffsetForward(charFromBuffer, stepCoder);
+                        byteBufferOutput.putChar(charOffset);
+                    } else byteBufferOutput.putChar(charFromBuffer);
+                }
+                byteBufferInput.clear();
+                byteBufferOutput.flip();
+                channelOutputFile.write(byteBufferOutput);
+                byteBufferOutput.clear();
+           }
+        }catch (IOException e){
+            System.err.println("Ошибка работы с файлами данных!" + e.getMessage());
+        }
+    }
+
+    public static void transcript(String inputPath, String outputPath, int stepCoder) {
 
     }
 
-    public static void transcript(Path inputPath, Path outputPath, int stepCoder) {
-
-    }
-
-    public static Path pathCheck() {
-        Path absolutPath = Paths.get(scan.nextLine()).toAbsolutePath();
-        if (Files.notExists(absolutPath)) {
+    public static String pathCheck() {
+        String absolutPath = scan.nextLine();
+        if (absolutPath.isEmpty()){
+            absolutPath = scan.nextLine();
+        }
+        while (Files.notExists(Path.of(absolutPath))) {
             System.out.println(absolutPath + " - Такого файла не существует! Укажите путь к существующему файлу!");
-            absolutPath = Paths.get(scan.nextLine()).toAbsolutePath();
-        } else if (Files.isDirectory(absolutPath)) {
+            absolutPath = scan.nextLine();
+        } while (Files.isDirectory(Path.of(absolutPath))) {
             System.out.println(absolutPath + " - Вы указали путь к директории! Укажите путь к файлу!");
-            absolutPath = Paths.get(scan.nextLine()).toAbsolutePath();
+            absolutPath = scan.nextLine();
         }
         return absolutPath;
     }
