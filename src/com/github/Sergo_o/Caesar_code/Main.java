@@ -17,6 +17,7 @@ public class Main {
             "путь к файлу, где нужно сохранить результат работы программы;\n" +
             "число - шаг сдвига букв (положительное число).";
     static String CYRILLIC_ALPHABET = "абвгдеёжзийклмнопрстуфхцчшщъыьэюя";
+    static String LATIN_ALPHABET = "ABCDEFGHIJKLMNOPQRSTUVWXYZ".toLowerCase();
     static Scanner scan = new Scanner(System.in);
 
     public static void main(String[] args) {
@@ -57,25 +58,25 @@ public class Main {
         boolean charIsUpperCase = Character.isUpperCase(inputChar);
 
         if(charIsUpperCase){
-            indexCharInAlphabet = CYRILLIC_ALPHABET.indexOf(Character.toLowerCase(inputChar));
+            indexCharInAlphabet = LATIN_ALPHABET.indexOf(Character.toLowerCase(inputChar));
         }
-        else indexCharInAlphabet = CYRILLIC_ALPHABET.indexOf(inputChar);
+        else indexCharInAlphabet = LATIN_ALPHABET.indexOf(inputChar);
 
         if(indexCharInAlphabet == -1){
-            System.out.printf("Символ - %s, не входит в русский алфавит!\n", inputChar );
+            System.out.printf("Символ - %s, не входит в английский алфавит!\n", inputChar );
             return inputChar;
         }
 
         shift += indexCharInAlphabet;
-        while (shift>CYRILLIC_ALPHABET.length()){
-            shift -= CYRILLIC_ALPHABET.length() -1;
+        while (shift>LATIN_ALPHABET.length()){
+            shift -= LATIN_ALPHABET.length() -1;
         }
 
-        if(shift<CYRILLIC_ALPHABET.length() && shift>=0){
+        if(shift<LATIN_ALPHABET.length() && shift>=0){
             if(charIsUpperCase){
-                return Character.toUpperCase(CYRILLIC_ALPHABET.charAt(shift));
+                return Character.toUpperCase(LATIN_ALPHABET.charAt(shift));
             }
-            else return CYRILLIC_ALPHABET.charAt(shift);
+            else return LATIN_ALPHABET.charAt(shift);
         }
         return '?';
     }
@@ -85,9 +86,9 @@ public class Main {
         boolean charIsUpperCase = Character.isUpperCase(inputChar);
 
         if(charIsUpperCase){
-            indexCharInAlphabet = CYRILLIC_ALPHABET.indexOf(Character.toLowerCase(inputChar));
+            indexCharInAlphabet = LATIN_ALPHABET.indexOf(Character.toLowerCase(inputChar));
         }
-        else indexCharInAlphabet = CYRILLIC_ALPHABET.indexOf(inputChar);
+        else indexCharInAlphabet = LATIN_ALPHABET.indexOf(inputChar);
 
         if(indexCharInAlphabet == -1){
             System.out.printf("Символ - %s, не входит в русский алфавит!", inputChar);
@@ -95,20 +96,20 @@ public class Main {
 
         shift = indexCharInAlphabet - shift;
         while (shift<0){
-            shift += CYRILLIC_ALPHABET.length();
+            shift += LATIN_ALPHABET.length();
         }
 
-        if(shift<CYRILLIC_ALPHABET.length()){
+        if(shift<LATIN_ALPHABET.length()){
             if(charIsUpperCase){
-                return Character.toUpperCase(CYRILLIC_ALPHABET.charAt(shift));
+                return Character.toUpperCase(LATIN_ALPHABET.charAt(shift));
             }
-            else return CYRILLIC_ALPHABET.charAt(shift);
+            else return LATIN_ALPHABET.charAt(shift);
         }
         return '?';
     }
 
     public static void encryption(String inputPath, String outputPath, int stepCoder) {
-        try(RandomAccessFile inputFile = new RandomAccessFile(inputPath,"r");
+        try(RandomAccessFile inputFile = new RandomAccessFile(inputPath,"rw");
         RandomAccessFile outputFile = new RandomAccessFile(outputPath,"rw");
         FileChannel channelInputFile = inputFile.getChannel();
         FileChannel channelOutputFile = outputFile.getChannel()){
@@ -119,15 +120,17 @@ public class Main {
             while (channelInputFile.read(byteBufferInput) != -1){
                 byteBufferInput.flip();
                 while(byteBufferInput.hasRemaining()) {
-                    char charFromBuffer =  byteBufferInput.getChar();
+                    char charFromBuffer =  (char) byteBufferInput.get();
                     if (Character.isLetter(charFromBuffer)) {
                         char charOffset = characterOffsetForward(charFromBuffer, stepCoder);
-                        byteBufferOutput.putChar(charOffset);
-                    } else byteBufferOutput.putChar(charFromBuffer);
+                        byteBufferOutput.put((byte)charOffset);
+                    } else byteBufferOutput.put((byte)charFromBuffer);
                 }
                 byteBufferInput.clear();
                 byteBufferOutput.flip();
-                channelOutputFile.write(byteBufferOutput);
+                while (byteBufferOutput.hasRemaining()) {
+                    channelOutputFile.write(byteBufferOutput);
+                }
                 byteBufferOutput.clear();
            }
         }catch (IOException e){
