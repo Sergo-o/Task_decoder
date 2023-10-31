@@ -2,7 +2,9 @@ package com.github.Sergo_o.Caesar_code;
 
 import java.io.*;
 import java.nio.ByteBuffer;
+import java.nio.CharBuffer;
 import java.nio.channels.FileChannel;
+import java.nio.charset.Charset;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Scanner;
@@ -58,9 +60,9 @@ public class Main {
         boolean charIsUpperCase = Character.isUpperCase(inputChar);
 
         if(charIsUpperCase){
-            indexCharInAlphabet = LATIN_ALPHABET.indexOf(Character.toLowerCase(inputChar));
+            indexCharInAlphabet = CYRILLIC_ALPHABET.indexOf(Character.toLowerCase(inputChar));
         }
-        else indexCharInAlphabet = LATIN_ALPHABET.indexOf(inputChar);
+        else indexCharInAlphabet = CYRILLIC_ALPHABET.indexOf(inputChar);
 
         if(indexCharInAlphabet == -1){
             System.out.printf("Символ - %s, не входит в английский алфавит!\n", inputChar );
@@ -68,15 +70,15 @@ public class Main {
         }
 
         shift += indexCharInAlphabet;
-        while (shift>=LATIN_ALPHABET.length()){
-            shift -= LATIN_ALPHABET.length();
+        while (shift>=CYRILLIC_ALPHABET.length()){
+            shift -= CYRILLIC_ALPHABET.length();
         }
 
-        if(shift<LATIN_ALPHABET.length() && shift>=0){
+        if(shift<CYRILLIC_ALPHABET.length() && shift>=0){
             if(charIsUpperCase){
-                return Character.toUpperCase(LATIN_ALPHABET.charAt(shift));
+                return Character.toUpperCase(CYRILLIC_ALPHABET.charAt(shift));
             }
-            else return LATIN_ALPHABET.charAt(shift);
+            else return CYRILLIC_ALPHABET.charAt(shift);
         }
         return '?';
     }
@@ -116,6 +118,7 @@ public class Main {
 
             ByteBuffer byteBufferInput = ByteBuffer.allocate(100);
             ByteBuffer byteBufferOutput = ByteBuffer.allocate(100);
+
 
             while (channelInputFile.read(byteBufferInput) != -1){
                 byteBufferInput.flip();
