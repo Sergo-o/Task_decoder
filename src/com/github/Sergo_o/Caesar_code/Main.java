@@ -16,8 +16,8 @@ public class Main {
             "путь к файлу, где находится исходной текст;\n" +
             "путь к файлу, где нужно сохранить результат работы программы;\n" +
             "число - шаг сдвига букв (положительное число).";
-    static String CYRILLIC_ALPHABET = "абвгдеёжзийклмнопрстуфхцчшщъыьэюя";
-    static String LATIN_ALPHABET = "ABCDEFGHIJKLMNOPQRSTUVWXYZ".toLowerCase();
+    static String CYRILLIC_ALPHABET = "абвгдеёжзийклмнопрстуфхцчшщъыьэюя"; // 33 буквы.
+    static String LATIN_ALPHABET = "ABCDEFGHIJKLMNOPQRSTUVWXYZ".toLowerCase(); // 26 букв.
     static Scanner scan = new Scanner(System.in);
 
     public static void main(String[] args) {
@@ -68,8 +68,8 @@ public class Main {
         }
 
         shift += indexCharInAlphabet;
-        while (shift>LATIN_ALPHABET.length()){
-            shift -= LATIN_ALPHABET.length() -1;
+        while (shift>=LATIN_ALPHABET.length()){
+            shift -= LATIN_ALPHABET.length();
         }
 
         if(shift<LATIN_ALPHABET.length() && shift>=0){
