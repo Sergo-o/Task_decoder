@@ -5,6 +5,7 @@ import java.nio.ByteBuffer;
 import java.nio.CharBuffer;
 import java.nio.channels.FileChannel;
 import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Scanner;
@@ -116,21 +117,26 @@ public class Main {
         FileChannel channelInputFile = inputFile.getChannel();
         FileChannel channelOutputFile = outputFile.getChannel()){
 
-            ByteBuffer byteBufferInput = ByteBuffer.allocate(100);
-            ByteBuffer byteBufferOutput = ByteBuffer.allocate(100);
+            ByteBuffer byteBufferInput = ByteBuffer.allocate(1024);
+            CharBuffer charBufferInput;
+
 
 
             while (channelInputFile.read(byteBufferInput) != -1){
                 byteBufferInput.flip();
-                while(byteBufferInput.hasRemaining()) {
-                    char charFromBuffer =  (char) byteBufferInput.get();
+                charBufferInput = StandardCharsets.UTF_8.decode(byteBufferInput);
+                CharBuffer charBufferOutput = CharBuffer.allocate(charBufferInput.capacity());
+
+                while(charBufferInput.hasRemaining()) {
+                    char charFromBuffer =  charBufferInput.get();
                     if (Character.isLetter(charFromBuffer)) {
                         char charOffset = characterOffsetForward(charFromBuffer, stepCoder);
-                        byteBufferOutput.put((byte)charOffset);
-                    } else byteBufferOutput.put((byte)charFromBuffer);
+                        charBufferOutput.put(charOffset);
+                    } else charBufferOutput.put(charFromBuffer);
                 }
                 byteBufferInput.clear();
-                byteBufferOutput.flip();
+                charBufferOutput.flip();
+                ByteBuffer byteBufferOutput = StandardCharsets.UTF_8.encode(charBufferOutput);
                 while (byteBufferOutput.hasRemaining()) {
                     channelOutputFile.write(byteBufferOutput);
                 }
