@@ -1,7 +1,8 @@
 package com.github.Sergo_o.Caesar_code;
 
-import javax.print.DocFlavor;
+
 import java.io.*;
+
 import java.nio.ByteBuffer;
 import java.nio.CharBuffer;
 import java.nio.channels.FileChannel;
@@ -97,12 +98,16 @@ public class Main {
         }
 
             String stringInputData = stringBufferInputData.toString();
-            String[] arrayInputData = stringInputData.replaceAll("\\p{Punct}","").split(" ");
+            String[] arrayInputData = stringInputData
+                    .replaceAll("\\p{Punct}","")
+                    .replaceAll("\\d","").replaceAll("\\t","")
+                    .replaceAll("\\p{Cntrl}"," ").split(" ");
+
             ArrayList<String> listInputData = new ArrayList<>();
 
             for (int i = 0; i < arrayInputData.length; i++) {
                 arrayInputData[i] = arrayInputData[i].trim();
-                if(arrayInputData[i].length() <= maxLengthWord){
+                if(arrayInputData[i].length() > 1 && arrayInputData[i].length() <= maxLengthWord && !arrayInputData[i].isEmpty()){
                     listInputData.add(arrayInputData[i]);
                 }
             }
@@ -119,7 +124,9 @@ public class Main {
                         charsWord[j] = characterOffsetForward(charsWord[j],i);
                         }
                     }
-                    listOutputData.add(Arrays.toString(charsWord));
+
+                    listOutputData.add(Arrays.toString(charsWord).replaceAll("\\p{Punct}","")
+                            .replaceAll(" ",""));
                 }
                 for (Map.Entry<String,Integer> topRussianWord : TOP_RUSSIAN_WORDS_MAP.entrySet()) {
                     for (int j = 0; j < listOutputData.size(); j++) {
@@ -131,8 +138,10 @@ public class Main {
                 int sumMatches = 0;
                 for (Map.Entry<String,Integer> topRussianWord : TOP_RUSSIAN_WORDS_MAP.entrySet()) {
                     sumMatches += topRussianWord.getValue();
+                    topRussianWord.setValue(0);
                 }
                 numberOfMatches[i-1] = sumMatches;
+
                 if(i==CYRILLIC_ALPHABET.length()){
                     bool = false;
                 }
@@ -145,8 +154,8 @@ public class Main {
 
         for (int i = 0; i < numberOfMatches.length; i++) {
             if(maxMatches<numberOfMatches[i]){
-                maxMatches = numberOfMatches [i];
-                stepCoder = i;
+                maxMatches = numberOfMatches[i];
+                stepCoder = i+1;
             }
         }
         System.out.println(stepCoder);
