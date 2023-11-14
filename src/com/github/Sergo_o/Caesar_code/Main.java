@@ -1,25 +1,30 @@
 package com.github.Sergo_o.Caesar_code;
-
-
-import java.io.*;
-
+import java.io.IOException;
+import java.io.RandomAccessFile;
 import java.nio.ByteBuffer;
 import java.nio.CharBuffer;
 import java.nio.channels.FileChannel;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+import java.util.Scanner;
+
 
 public class Main {
 
-    static String ACTION_SELECTION = "Приветствую!\nВыберите действие:\n" +
-            "1 - Зашифровать текст;\n" +
-            "2 - Расшифровать текст;\n" +
-            "3 - Подбор ключа для расшифровки.";
-    static String DATA_REQUEST = "Введите данные:\n" +
-            "путь к файлу, где находится исходной текст;\n" +
-            "путь к файлу, где нужно сохранить результат работы программы;\n";
+    static String ACTION_SELECTION = """
+            Приветствую!
+            Выберите действие:
+            1 - Зашифровать текст;
+            2 - Расшифровать текст;
+            3 - Подбор ключа для расшифровки.""";
+    static String DATA_REQUEST = """
+            Введите данные:
+            путь к файлу, где находится исходной текст;
+            путь к файлу, где нужно сохранить результат работы программы;""";
     static String NUMBER_STEP_CODER = "число - шаг сдвига букв.";
     static String CYRILLIC_ALPHABET = "абвгдеёжзийклмнопрстуфхцчшщъыьэюя"; // 33 буквы.
     static String LATIN_ALPHABET = "abcdefghijklmnopqrstuvwxyz"; // 26 букв.
@@ -120,25 +125,20 @@ public class Main {
                  ",готовый,запах,неожиданно,вчера,вздохнуть,роль,рост,природа,политический,точка,звезда,петь,садиться" +
                  ",фамилия,характер,пожалуйста,выше,офицер,толпа,перестать,придтись,уровень,неизвестный,кресло,баба,секунда";
 
-                String[] words = TOP_RUSSIAN_WORDS.split(",");
-        int maxLengthWord = 0;
-        Map<String,Integer> TOP_RUSSIAN_WORDS_MAP = new HashMap<>();
+        String[] topWords = TOP_RUSSIAN_WORDS.split(",");
+        List<String> words = Arrays.asList(topWords);
+        int stepCoder = 0;
 
-        for (String word : words) {
-            TOP_RUSSIAN_WORDS_MAP.put(word,0);
-            if(maxLengthWord<word.length()){
-                maxLengthWord = word.length();
-            }
-        }
-        StringBuffer stringBufferInputData = new StringBuffer();
+        StringBuilder stringBufferInputData = new StringBuilder();
 
         try (RandomAccessFile inputFile = new RandomAccessFile(inputPath,"rw");
-                FileChannel inputChannel = inputFile.getChannel()){
+             FileChannel inputChannel = inputFile.getChannel()){
             ByteBuffer byteBuffer = ByteBuffer.allocate(1024);
             CharBuffer charBuffer;
 
             while (inputChannel.read(byteBuffer) != -1){
                 byteBuffer.flip();
+
                 charBuffer = StandardCharsets.UTF_8.decode(byteBuffer);
                 stringBufferInputData.append(charBuffer);
 
@@ -155,21 +155,11 @@ public class Main {
                     .replaceAll("\\d","").replaceAll("\\t","")
                     .replaceAll("\\p{Cntrl}"," ").split(" ");
 
-            ArrayList<String> listInputData = new ArrayList<>();
-
-            for (int i = 0; i < arrayInputData.length; i++) {
-                arrayInputData[i] = arrayInputData[i].trim();
-                if(arrayInputData[i].length() > 1 && arrayInputData[i].length() <= maxLengthWord && !arrayInputData[i].isEmpty()){
-                    listInputData.add(arrayInputData[i]);
-                }
-            }
-
             boolean bool = true;
-            int[] numberOfMatches = new int[CYRILLIC_ALPHABET.length()];
         while (bool) {
             ArrayList<String> listOutputData = new ArrayList<>();
             for (int i = 1; i <= CYRILLIC_ALPHABET.length(); i++) {
-                for (String wordInput : listInputData) {
+                for (String wordInput : arrayInputData) {
                     char[] charsWord = wordInput.toCharArray();
                     for (int j = 0; j < charsWord.length; j++) {
                         if(Character.isLetter(charsWord[j])){
@@ -180,37 +170,25 @@ public class Main {
                     listOutputData.add(Arrays.toString(charsWord).replaceAll("\\p{Punct}","")
                             .replaceAll(" ",""));
                 }
-                for (int j = 0; j < listOutputData.size(); j++) {
-                    for (Map.Entry<String,Integer> topRussianWord : TOP_RUSSIAN_WORDS_MAP.entrySet()) {
-                        if(topRussianWord.getKey().equalsIgnoreCase(listOutputData.get(j))){
-                            topRussianWord.setValue(topRussianWord.getValue()+1);
-                        }
+                int sumMatches = 0;
+                for (String word : listOutputData) {
+                        if(words.contains(word.toLowerCase())){
+                            sumMatches++;
                     }
                 }
-                int sumMatches = 0;
-                for (Map.Entry<String,Integer> topRussianWord : TOP_RUSSIAN_WORDS_MAP.entrySet()) {
-                    sumMatches += topRussianWord.getValue();
-                    topRussianWord.setValue(0);
-                }
-                numberOfMatches[i-1] = sumMatches;
+
                 listOutputData.clear();
+                if(sumMatches>5){
+                    stepCoder = i;
+                    bool = false;
+                }
 
                 if(i==CYRILLIC_ALPHABET.length()){
                     bool = false;
                 }
             }
         }
-        System.out.println(Arrays.toString(numberOfMatches));
 
-        int maxMatches = 0;
-        int stepCoder = 0;
-
-        for (int i = 1; i <= numberOfMatches.length; i++) {
-            if(maxMatches<numberOfMatches[i-1]){
-                maxMatches = numberOfMatches[i-1];
-                stepCoder = i;
-            }
-        }
         System.out.println(stepCoder);
         transcript(inputPath,outputPath,stepCoder);
     }
@@ -230,7 +208,7 @@ public class Main {
         else indexCharInAlphabet = alphabet.indexOf(inputChar);
 
         if(indexCharInAlphabet == -1){
-            System.out.printf("Символ - %s, не входит в английский алфавит!\n", inputChar );
+            System.out.printf("Неизвестный символ - %s!\n", inputChar );
             return inputChar;
         }
 
